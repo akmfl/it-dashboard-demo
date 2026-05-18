@@ -590,6 +590,25 @@ tr.selected { background: rgba(240,160,48,0.08); border-left: 2px solid var(--ac
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ---- PRINT ---- */
+@media print {
+  body { background: #fff; color: #000; }
+  .top-bar, .filter-bar, .tabs, .chart-grid, .detail-panel, .search-bar { display: none; }
+  .app { max-width: 100%; padding: 0; }
+  .header { background: none; border: none; }
+  .header h1 { color: #000; }
+  .subtitle { color: #333; }
+  .kpi-row { gap: 8px; }
+  .kpi { background: #f5f5f5; border: 1px solid #ccc; color: #000; }
+  .kpi .value { color: #000; }
+  .tab-content { display: block !important; }
+  .table-section { grid-template-columns: 1fr; }
+  table { font-size: 10px; }
+  th, td { border: 1px solid #ccc; padding: 4px; color: #000; }
+  th { background: #eee; }
+  tr.selected { background: #f0f0f0; }
+}
 </style>
 </head>
 <body>
@@ -621,12 +640,12 @@ tr.selected { background: rgba(240,160,48,0.08); border-left: 2px solid var(--ac
   </div>
   <div class="tab-content active" id="tab-overview" role="tabpanel">
     <div class="charts-grid">
-      <div class="chart-card"><h3>Work Orders by Age</h3><div class="chart-wrap"><canvas id="chartAge"></canvas></div></div>
-      <div class="chart-card"><h3>Workload by Employee</h3><div class="chart-wrap"><canvas id="chartEmployee"></canvas></div></div>
-      <div class="chart-card"><h3>By Priority</h3><div class="chart-wrap"><canvas id="chartPriority"></canvas></div></div>
-      <div class="chart-card"><h3>By Department</h3><div class="chart-wrap"><canvas id="chartDept"></canvas></div></div>
-      <div class="chart-card"><h3>Submitted By</h3><div class="chart-wrap"><canvas id="chartSubmitter"></canvas></div></div>
-      <div class="chart-card"><h3>By Activity</h3><div class="chart-wrap"><canvas id="chartActivity"></canvas></div></div>
+      <div class="chart-card"><h3>Work Orders by Age</h3><div class="chart-wrap"><canvas aria-hidden="true" id="chartAge"></canvas></div></div>
+      <div class="chart-card"><h3>Workload by Employee</h3><div class="chart-wrap"><canvas aria-hidden="true" id="chartEmployee"></canvas></div></div>
+      <div class="chart-card"><h3>By Priority</h3><div class="chart-wrap"><canvas aria-hidden="true" id="chartPriority"></canvas></div></div>
+      <div class="chart-card"><h3>By Department</h3><div class="chart-wrap"><canvas aria-hidden="true" id="chartDept"></canvas></div></div>
+      <div class="chart-card"><h3>Submitted By</h3><div class="chart-wrap"><canvas aria-hidden="true" id="chartSubmitter"></canvas></div></div>
+      <div class="chart-card"><h3>By Activity</h3><div class="chart-wrap"><canvas aria-hidden="true" id="chartActivity"></canvas></div></div>
     </div>
   </div>
   <div class="tab-content" id="tab-details" role="tabpanel">
@@ -658,7 +677,17 @@ const COLUMNS = [
   { field: "Submitter_Short", label: "Submitted By", width: 130, hideMobile: true },
 ];
 
-function loadData() { allData = DEMO_DATA; applyFilter(); }
+function loadData() { allData = DEMO_DATA; normalizeAssignments(); applyFilter(); }
+
+function normalizeAssignments() {
+  allData.forEach(function(r) {
+    var hasEmp = r.Assigned_Employee && r.Assigned_Employee !== "(Unassigned)";
+    var hasTeam = r.Custom_Assignee_Name || r.Team_Assignment;
+    if (!hasEmp && hasTeam) r.Employee_Short = r.Team_Assignment || r.Custom_Assignee_Name;
+    if (!hasEmp && !hasTeam) r.Employee_Short = "(Unassigned)";
+    r.Is_Assigned = (hasEmp || hasTeam) ? "Yes" : "No";
+  });
+}
 
 function applyFilter() {
   if (currentFilter === "all") filteredData = allData.slice();
